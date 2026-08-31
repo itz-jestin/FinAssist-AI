@@ -3,6 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import json
+from agents.ticket import escalate_to_human
 
 loaded_env = load_dotenv(".env")
 client = OpenAI(
@@ -76,10 +77,24 @@ def run_account_agent(query,user_id,session_verified):
                     "required":["transaction_id"]
                 }
             }
+        },
+        {
+            "type":"function",
+            "function":{
+                "name":"escalate_to_human",
+                "description":"Use this tool when the request requires human review - account closure,fraud reports,disputes the system can't resolve, or anything sensitive/out of scope.",
+                "parameters":{
+                    "type":"object",
+                    "properties":{
+                        "reason":{"type":"string"},
+                    },
+                    "required":["reason"]
+                }
+            }
         }        
     ]
 
-    available_functions = {"check_account_balance":check_account_balance, "check_transaction_status":check_transaction_status, "calculate_refund_eligibility":calculate_refund_eligibility}
+    available_functions = {"check_account_balance":check_account_balance, "check_transaction_status":check_transaction_status, "calculate_refund_eligibility":calculate_refund_eligibility,"escalate_to_human":escalate_to_human}
 
     messages = [{
         "role":"system",
@@ -110,12 +125,14 @@ def run_account_agent(query,user_id,session_verified):
                 if name == "check_account_balance":
                     # result = org_name(args["user_id"].lower(),args["session_verified"].lower())
                     result = org_name(user_id,session_verified)
-                if name == "check_transaction_status":
+                elif name == "check_transaction_status":
                     # result = org_name(args["user_id"].lower(),args["session_verified"].lower(),args["transaction_id"].lower())
                     result = org_name(user_id,session_verified,args["transaction_id"].lower())
-                if name == "calculate_refund_eligibility":
+                elif name == "calculate_refund_eligibility":
                     # result = org_name(args["user_id"].lower(),args["session_verified"].lower(),args["transaction_id"].lower())
                     result = org_name(user_id,session_verified,args["transaction_id"].lower())
+                elif name == "escalate_to_human":
+                    result = org_name(query,args["reason"].lower(),user_id,messages[-5:])  
                 messages.append({"role":"tool","tool_call_id":call.id,"content":str(result)})
     
     return "Reached max iterations."

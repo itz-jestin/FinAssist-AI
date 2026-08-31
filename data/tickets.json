@@ -1,0 +1,75 @@
+[
+  {
+    "ticket_id": "TCK-0001",
+    "user_id": "USR-1024",
+    "query": "I want to permanently close my account and delete all my personal information.",
+    "reason": "account_closure_request",
+    "status": "pending",
+    "created_at": "2026-08-31T08:05:00+05:30",
+    "conversation_context": [
+      {"role": "user", "message": "I want to permanently close my account."},
+      {"role": "assistant", "message": "I can help with account-related questions, but account closure requires a human agent."},
+      {"role": "user", "message": "Please connect me with someone who can close it."}
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "account_management",
+    "updated_at": "2026-08-31T08:05:00+05:30"
+  },
+  {
+    "ticket_id": "TCK-0002",
+    "user_id": "USR-2048",
+    "query": "There is a transaction on my account that I did not make. I think someone has stolen my account.",
+    "reason": "fraud_report",
+    "status": "in_progress",
+    "created_at": "2026-08-31T07:42:00+05:30",
+    "conversation_context": [
+      {"role": "user", "message": "I see a transaction I don't recognize."},
+      {"role": "assistant", "message": "Can you confirm whether you made this transaction?"},
+      {"role": "user", "message": "No, I definitely did not make it."},
+      {"role": "assistant", "message": "This needs to be reviewed by a human agent immediately."}
+    ],
+    "priority": "high",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "fraud",
+    "updated_at": "2026-08-31T07:50:00+05:30"
+  },
+  {
+    "ticket_id": "TCK-0003",
+    "user_id": "USR-3096",
+    "query": "Why was my refund partially rejected even though the entire order was cancelled?",
+    "reason": "unresolved_by_rag_and_tools",
+    "status": "pending",
+    "created_at": "2026-08-31T06:30:00+05:30",
+    "conversation_context": [
+      {"role": "user", "message": "I cancelled my entire order. Why did I only get part of my refund?"},
+      {"role": "assistant", "message": "I couldn't find enough information in the available documents to determine why the refund was partial."},
+      {"role": "user", "message": "Can a human agent check this for me?"}
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "billing",
+    "updated_at": "2026-08-31T06:30:00+05:30"
+  },
+  {
+    "ticket_id": "TCK-0004",
+    "user_id": "USR-4172",
+    "query": "My payment was deducted twice for the same order. I need one of the payments refunded.",
+    "reason": "duplicate_payment",
+    "status": "resolved",
+    "created_at": "2026-08-30T18:20:00+05:30",
+    "conversation_context": [
+      {"role": "user", "message": "I was charged twice for the same order."},
+      {"role": "assistant", "message": "I can see that this issue requires payment verification by a human agent."},
+      {"role": "user", "message": "Okay, please have someone check it."}
+    ],
+    "priority": "high",
+    "resolved_by": "agent_007",
+    "resolution_notes": "Verified duplicate payment and initiated a refund for the second transaction.",
+    "category": "billing",
+    "updated_at": "2026-08-31T07:15:00+05:30"
+  }
+]

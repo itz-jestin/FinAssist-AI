@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from agents.tool_agent import use_tool
-from agents.researcher_agent import delegate_research
+from agents.ticket import delegate_research
 from services.chroma_service import search_chunks
 
 load_dotenv(".env")
