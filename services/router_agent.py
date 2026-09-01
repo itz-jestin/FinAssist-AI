@@ -2,8 +2,7 @@ import json
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
-from agents.tool_agent import use_tool
-from agents.ticket import delegate_research
+from agents.account_tools import run_account_agent
 from services.chroma_service import search_chunks
 
 load_dotenv(".env")
@@ -20,13 +19,8 @@ router_tools = [
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }},
     {"type": "function", "function": {
-        "name": "use_tool",
-        "description": "This consists of tools which can be used to perform certain tasks like weather,calculator,current date.",
-        "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
-    }},
-    {"type": "function", "function": {
-        "name": "delegate_research",
-        "description": "This tool is used to research for a given topic.",
+        "name": "run_account_agent",
+        "description": "This tool can be used to perform account-related tasks like checking account balance, transaction status, refund eligibility, and human escalation.",
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }}
 ]
@@ -38,19 +32,12 @@ def use_rag(query):
         return "No relevant information found in the document."
     return "\n\n".join(chunks)
 
-available_tools = {"use_rag": use_rag, "use_tool": use_tool, "delegate_research": delegate_research}
+available_tools = {"use_rag": use_rag, "run_account_agent": run_account_agent}
 
-def run_router(user_prompt):
+def run_router(user_prompt, user_id, session_verified):
     messages = [
         {"role": "system", "content": (
-            "Your job is to only route. For questions about people, documents, or specific facts "
-            "that might be in the uploaded documents, always try use_rag FIRST before considering "
-            "delegate_research. Only use delegate_research for general knowledge topics not expected "
-            "to be in the documents (e.g. public figures, historical events, general concepts), or "
-            "if use_rag returns no relevant information. "
-            "If a tool or sub-agent reports it could not retrieve verified information, relay that "
-            "limitation honestly to the user — do not fill the gap with your own general knowledge, "
-            "even with a disclaimer."
+            "Your job is to only route. For questions about people, documents, or specific facts use use_rag tool. For account-related questions, use run_account_agent. "
         )},
         {"role": "user", "content": user_prompt}
     ]
@@ -59,9 +46,10 @@ def run_router(user_prompt):
     loop_count = 0
     while loop_count != max_loop:
         response = client.chat.completions.create(
-            model="nvidia/nemotron-3-ultra-550b-a55b",
+            model="nvidia/nemotron-3-nano-30b-a3b",
             messages=messages,
-            tools=router_tools
+            tools=router_tools,
+            max_tokens=400
         )
         call = response.choices[0].message
         messages.append(call.model_dump())
@@ -71,8 +59,14 @@ def run_router(user_prompt):
 
         for tool in call.tool_calls:
             function_name = tool.function.name
+            org_function_name = available_tools.get(function_name)
+            print(f"Calling tool: {function_name}")
             args = json.loads(tool.function.arguments)
-            fun_out = available_tools[function_name](args["query"])
+            if org_function_name == use_rag:
+                fun_out = org_function_name(args["query"])
+            elif org_function_name == run_account_agent:
+                fun_out = org_function_name(args["query"], user_id, session_verified)
+                print(fun_out)
             messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
 
         loop_count += 1

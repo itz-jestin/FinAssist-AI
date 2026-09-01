@@ -43,7 +43,7 @@ def escalate_to_human(query, reason, user_id=None, conversation_context=None):
       "reason": reason,
       "status": "pending",
       "created_at": now,
-      "conversation_context": conversation_context or [],
+      "conversation_context": format_conversation_context(conversation_context or []),
       "priority": "medium",
       "resolved_by": None,
       "resolution_notes": None,
@@ -53,3 +53,12 @@ def escalate_to_human(query, reason, user_id=None, conversation_context=None):
     tickets.append(new_ticket)
     save_tickets(tickets)
     return f"Escalated to human support (ticket #{new_ticket['ticket_id']})"
+
+def format_conversation_context(messages):
+    formatted = []
+    for m in messages:
+        role = m.get("role")
+        content = m.get("content")
+        if content:
+            formatted.append({"role": role, "message": content})
+    return formatted

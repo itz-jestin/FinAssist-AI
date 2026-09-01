@@ -5,7 +5,7 @@ from services.chunking_service import extract_pdf_text, split
 
 
 CHROMA_PATH = "./chroma_db"
-file_path = "files/Moncy_Monachan_Resume.pdf"
+file_path = "files/FinWise_FAQ_Policy_Demo.pdf"
 
 client = chromadb.PersistentClient(
     path=CHROMA_PATH,
@@ -38,7 +38,7 @@ def store_chunks(chunks,pdf_name):
     
     return collection
 
-store_chunks(chunks,"moncy_monachan_resume")
+store_chunks(chunks,"finwise_faq_policy_demo")
 
 
 def search_chunks(query,n_results = 5):

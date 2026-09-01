@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import json
 from agents.ticket import escalate_to_human
+import time
 
 loaded_env = load_dotenv(".env")
 client = OpenAI(
@@ -40,7 +41,7 @@ def calculate_refund_eligibility(user_id, session_verified, transaction_id):
     return {"eligible": False}
 
 def run_account_agent(query,user_id,session_verified):
-
+    print(f"Running account agent for user_id: {user_id}, session_verified: {session_verified}")
     tool_schemas = [
         {
             "type":"function",
@@ -98,7 +99,12 @@ def run_account_agent(query,user_id,session_verified):
 
     messages = [{
         "role":"system",
-        "content":"You are a helpful assistant that helps user to check their account related informations."
+        "content": (
+    "You are a helpful assistant that helps users with account-related information. "
+    "If the user provides enough information to call a tool (including escalation), "
+    "call it immediately — do not ask for confirmation or additional details unless "
+    "truly necessary to proceed."
+)
     },
     {
         "role":"user",
@@ -106,12 +112,31 @@ def run_account_agent(query,user_id,session_verified):
     }]
 
     for _ in range(3):
+            start = time.time()
             response = client.chat.completions.create(
-                model = "nvidia/nemotron-3-ultra-550b-a55b",
+                model = "nvidia/nemotron-3-nano-30b-a3b",
                 messages=messages,
-                tools=tool_schemas
+                tools=tool_schemas,
+                max_tokens=400,
             )
+            # models_to_test = [
+            #     "nvidia/nemotron-3-nano-30b-a3b",
+            #     # "nvidia/llama-3.1-nemotron-70b-instruct",
+            #     # "nvidia/nemotron-3-ultra-550b-a55b"  # baseline, current model
+            # ]
+            # for model_name in models_to_test:
+            #     start = time.time()
+            #     response = client.chat.completions.create(
+            #         model=model_name,
+            #         messages=messages,
+            #         tools=tool_schemas,
+            #         max_tokens=400
+            #     )
+            #     print(f"{model_name}: {time.time() - start:.2f}s")
+            #     print(response.choices[0].message.tool_calls)
+            print(f"API call took {time.time() - start} seconds")
             message = response.choices[0].message
+            print(message.model_dump())
             messages.append(message.model_dump())
     
             if not message.tool_calls:
@@ -136,4 +161,5 @@ def run_account_agent(query,user_id,session_verified):
                 messages.append({"role":"tool","tool_call_id":call.id,"content":str(result)})
     
     return "Reached max iterations."
+
 
