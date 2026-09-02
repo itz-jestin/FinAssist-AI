@@ -1,6 +1,7 @@
 import nltk
 from nltk.tokenize import sent_tokenize
 from pypdf import PdfReader
+import re
 
 try:
     nltk.data.find("tokenizers/punkt")
@@ -12,7 +13,10 @@ try:
 except LookupError:
     nltk.download("punkt_tab")   
 
-
+def split_qa_pairs(text):
+    pattern = r'(?=Q:)'
+    chunks = re.split(pattern, text)
+    return [c.strip() for c in chunks if c.strip()]
          
 
 def split(text,sentences_per_chunk=3):

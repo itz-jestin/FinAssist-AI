@@ -15,12 +15,12 @@ client = OpenAI(
 router_tools = [
     {"type": "function", "function": {
         "name": "use_rag",
-        "description": "This tool can check documents and give peoples information.",
+        "description": "Searches company policy documents — general refund policy, fee schedules, FAQ, KYC requirements, terms of service. Use this for 'what is your policy on X' style questions.",
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }},
     {"type": "function", "function": {
         "name": "run_account_agent",
-        "description": "This tool can be used to perform account-related tasks like checking account balance, transaction status, refund eligibility, and human escalation.",
+        "description": "Checks the LOGGED-IN USER'S specific account data — their balance, their transaction status, or refund eligibility for a SPECIFIC transaction ID they provide. Do NOT use this for general policy questions like 'what is your refund policy' — use use_rag for those.",
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }}
 ]
@@ -46,7 +46,7 @@ def run_router(user_prompt, user_id, session_verified):
     loop_count = 0
     while loop_count != max_loop:
         response = client.chat.completions.create(
-            model="nvidia/nemotron-3-nano-30b-a3b",
+            model=os.getenv("MODEL"),
             messages=messages,
             tools=router_tools,
             max_tokens=400
@@ -66,7 +66,7 @@ def run_router(user_prompt, user_id, session_verified):
                 fun_out = org_function_name(args["query"])
             elif org_function_name == run_account_agent:
                 fun_out = org_function_name(args["query"], user_id, session_verified)
-                print(fun_out)
+            print(fun_out)
             messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
 
         loop_count += 1

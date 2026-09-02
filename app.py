@@ -6,12 +6,12 @@ app = FastAPI()
 
 
 class UserRequest(BaseModel):
-    user_id: str
-    session_verified: bool
+    user_id: str = "user_a"
+    session_verified: bool = True
 
 
 class AskRequest(BaseModel):
-    question: str
+    question: str = "What is your refund policy?"
     
 
 user_sessions = {"user_id":"","session_verified":False}

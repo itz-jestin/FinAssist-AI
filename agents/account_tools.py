@@ -36,9 +36,12 @@ def calculate_refund_eligibility(user_id, session_verified, transaction_id):
         return {"error": "verification_required", "message": "Please verify your identity."}
     account = accounts.get(user_id)
     for txn in account.get("transactions", []):
-        if txn["id"] == transaction_id and txn["status"] == "disputed":
-            return {"eligible": True, "amount": abs(txn["amount"])}
-    return {"eligible": False}
+        if txn["id"] == transaction_id:
+            if txn["status"] == "disputed":
+                return {"eligible": True, "amount": abs(txn["amount"])}
+            else:
+                return {"eligible": False, "reason": f"Transaction status is '{txn['status']}', not disputed."}
+    return {"eligible": False, "reason": "Transaction not found."}
 
 def run_account_agent(query,user_id,session_verified):
     print(f"Running account agent for user_id: {user_id}, session_verified: {session_verified}")
@@ -100,10 +103,12 @@ def run_account_agent(query,user_id,session_verified):
     messages = [{
         "role":"system",
         "content": (
-    "You are a helpful assistant that helps users with account-related information. "
-    "If the user provides enough information to call a tool (including escalation), "
-    "call it immediately — do not ask for confirmation or additional details unless "
-    "truly necessary to proceed."
+    "You are a helpful assistant that helps users with account-related information "
+    "(balance, transactions, refund eligibility for a specific transaction). "
+    "You do NOT have access to general policy information. If asked about general "
+    "policies rather than the user's specific account, say you don't have that "
+    "information here and that it should be looked up separately. Never invent "
+    "policy details."
 )
     },
     {
@@ -114,7 +119,7 @@ def run_account_agent(query,user_id,session_verified):
     for _ in range(3):
             start = time.time()
             response = client.chat.completions.create(
-                model = "nvidia/nemotron-3-nano-30b-a3b",
+                model = os.getenv("MODEL"),
                 messages=messages,
                 tools=tool_schemas,
                 max_tokens=400,

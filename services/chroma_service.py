@@ -1,7 +1,7 @@
 import os 
 import chromadb
 from chromadb.config import Settings
-from services.chunking_service import extract_pdf_text, split
+from services.chunking_service import extract_pdf_text, split, split_qa_pairs
 
 
 CHROMA_PATH = "./chroma_db"
@@ -19,22 +19,24 @@ def get_collection():
 
 pdf_text=extract_pdf_text(file_path)     
 
-chunks = split(pdf_text)
+chunks = split_qa_pairs(pdf_text)
 
 def store_chunks(chunks,pdf_name):
     collection = get_collection()
     existing_ids = collection.get()["ids"]
-    if not existing_ids:
-        ids = [str(i) for i in range(len(chunks))]
-        metadatas = [{"source":pdf_name} for _ in chunks]
+    if existing_ids:
+        collection.delete(ids=existing_ids)
     
-        collection.add(
-            ids = ids,
-            documents=chunks,
-            metadatas=metadatas,
-        )
-    
-        print("Added to chroma")
+    ids = [str(i) for i in range(len(chunks))]
+    metadatas = [{"source":pdf_name} for _ in chunks]
+
+    collection.add(
+        ids = ids,
+        documents=chunks,
+        metadatas=metadatas,
+    )
+
+    print("Added to chroma")
     
     return collection
 

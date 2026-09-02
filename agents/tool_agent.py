@@ -48,6 +48,7 @@ def current_date():
 
 
 def run_tool_agent(query):
+    print(f"Running tool agent for query: {query}")
     sub_agent_tools = [
         {
             "type":"function",
@@ -94,18 +95,18 @@ def run_tool_agent(query):
 
     sub_agent_functions = {"weather":weather,"calculator":calculator,"current_date":current_date}
 
-    messages=[
+    messages1=[
         {"role":"system","content":"You are a helpful assistant with tools."},
         {"role":"user","content":query}
     ]
     for _ in range(5):
         response = client.chat.completions.create(
-            model = "nvidia/nemotron-3-ultra-550b-a55b",\
-            messages=messages,
+            model = os.getenv("MODEL"),
+            messages=messages1,
             tools=sub_agent_tools
         )
         message = response.choices[0].message
-        messages.append(message.model_dump())
+        messages1.append(message.model_dump())
 
         if not message.tool_calls:
             return message.content
@@ -122,7 +123,7 @@ def run_tool_agent(query):
             elif name == "current_date":
                 result = org_name() 
                 print(result)  
-            messages.append({"role":"tool","tool_call_id":call.id,"content":str(result)})
+            messages1.append({"role":"tool","tool_call_id":call.id,"content":str(result)})
 
     return "Reached max iterations."         
     
