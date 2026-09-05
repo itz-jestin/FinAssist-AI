@@ -1,26 +1,23 @@
 import { useState } from "react";
-import { verifyUser } from "../api";
+import {verifyUser} from "../api";
 
-function Login({ onLogin }) {
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async (userId, verified) => {
-    setLoading(true);
-    const data = await verifyUser(userId, verified);
-    onLogin(data.session_id, userId, verified);  // pass info up to parent
-    setLoading(false);
-  };
-
-  return (
+function Login(){
+  const  [verified , setVerified] = useState(null);
+  const [isVerified , setIsVerified] = useState(false);
+  async function handleClick(userId, sessionVerified){
+    const result = await verifyUser(userId, sessionVerified);
+    setVerified(result);
+    setIsVerified(sessionVerified);
+  }
+  return(
     <div>
-      <button onClick={() => handleLogin("user_a", true)}>
-        Login as User A (Verified)
-      </button>
-      <button onClick={() => handleLogin("user_b", false)}>
-        Login as User B (Unverified)
-      </button>
+      <button onClick={() => handleClick("user_a", true)}>user_a</button>
+      <button onClick={() => handleClick("user_b", false)}>user_b</button>
+      {verified ? "Logged in" : "Not logged in"}
+      {isVerified ? "Verified" : "Not Verified"}
     </div>
-  );
-}
+    )
+  }
+
 
 export default Login;

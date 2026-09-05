@@ -46,3 +46,7 @@ async def ask(data: AskRequest):
         session["session_verified"]
     )
     return {"answer": answer}
+
+@app.post("/hello")
+def hello():
+    return {"message": "Hello, world!"}
