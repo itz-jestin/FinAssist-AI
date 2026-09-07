@@ -17,3 +17,21 @@ export async function askQuestion(question, sessionId) {
     });
     return res.json(); // { answer: "..." }
 }
+
+export async function askQuestionStream(question, sessionId, onChunk) {
+    const res = await fetch(`${BASE_URL}/ask_stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, session_id: sessionId })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunkText = decoder.decode(value, { stream: true });
+        onChunk(chunkText);
+    }
+}

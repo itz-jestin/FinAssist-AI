@@ -49,13 +49,13 @@ def run_router(user_prompt, user_id, session_verified):
             model=os.getenv("MODEL"),
             messages=messages,
             tools=router_tools,
-            max_tokens=400
+            max_tokens=400,
         )
         call = response.choices[0].message
         messages.append(call.model_dump())
 
         if not call.tool_calls:
-            return call.content
+            break
 
         for tool in call.tool_calls:
             function_name = tool.function.name
@@ -71,4 +71,19 @@ def run_router(user_prompt, user_id, session_verified):
 
         loop_count += 1
 
-    return "Reached max iterations without a final answer."
+    
+    if loop_count == max_loop:
+        yield "Maximum loop count reached. The router could not find a suitable answer."
+    else:
+        stream = client.chat.completions.create(
+                model=os.getenv("MODEL"),
+                messages=messages,
+                tools=router_tools,
+                max_tokens=400,
+                stream=True
+            )
+        for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
+            

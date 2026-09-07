@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from services.router_agent import run_router
 import uuid
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -46,6 +47,22 @@ async def ask(data: AskRequest):
         session["session_verified"]
     )
     return {"answer": answer}
+
+@app.post("/ask_stream")
+async def ask_stream(data: AskRequest):
+    session = sessions.get(data.session_id)
+    if not session:
+        return {"error": "Invalid or expired session. Please log in again."}
+
+    async def event_generator():
+        for chunk in run_router(
+            data.question,
+            session["user_id"],
+            session["session_verified"]
+        ):
+            yield chunk
+
+    return StreamingResponse(event_generator(), media_type="text/plain")
 
 @app.post("/hello")
 def hello():

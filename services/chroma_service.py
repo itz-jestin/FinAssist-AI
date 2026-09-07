@@ -5,7 +5,7 @@ from services.chunking_service import extract_pdf_text, split, split_qa_pairs
 
 
 CHROMA_PATH = "./chroma_db"
-file_path = "files/FinWise_FAQ_Policy_Demo.pdf"
+file_path = "E:\\FinAssistAI\\files\\FinAssist_Customer_Policies_and_FAQ_Demo.pdf"
 
 client = chromadb.PersistentClient(
     path=CHROMA_PATH,
@@ -17,9 +17,6 @@ def get_collection():
         name="pdf_chunks"
     )
 
-pdf_text=extract_pdf_text(file_path)     
-
-chunks = split_qa_pairs(pdf_text)
 
 def store_chunks(chunks,pdf_name):
     collection = get_collection()
@@ -40,8 +37,6 @@ def store_chunks(chunks,pdf_name):
     
     return collection
 
-store_chunks(chunks,"finwise_faq_policy_demo")
-
 
 def search_chunks(query,n_results = 5):
     collection = get_collection()
@@ -51,4 +46,15 @@ def search_chunks(query,n_results = 5):
         n_results=n_results
     )
     return results
+
+
+print(search_chunks("what is the company policy?",n_results = 5))
+
+def ingest_document(file_path, pdf_name):
+    pdf_text = extract_pdf_text(file_path)
+    chunks = split(pdf_text, 5)
+    store_chunks(chunks, pdf_name)
+
+if __name__ == "__main__":
+    ingest_document(file_path, "FinAssist_Customer_Policies_and_FAQ_Demo.pdf")
 
