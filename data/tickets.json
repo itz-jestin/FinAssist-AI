@@ -110,5 +110,75 @@
     "resolution_notes": "Verified duplicate payment and initiated a refund for the second transaction.",
     "category": "billing",
     "updated_at": "2026-08-31T07:15:00+05:30"
+  },
+  {
+    "ticket_id": "TCK-0005",
+    "user_id": "user_a",
+    "query": "raise a dispute for my txn_001",
+    "reason": "user wants to raise a dispute for txn_001. transaction status is completed but user is requesting dispute escalation for review.",
+    "status": "pending",
+    "created_at": "2026-09-15T04:53:36.919347+00:00",
+    "conversation_context": [
+      {
+        "role": "assistant",
+        "message": "\n\n"
+      },
+      {
+        "role": "tool",
+        "message": "{'id': 'txn_001', 'date': '2026-08-20', 'amount': -1200, 'desc': 'Rent payment', 'status': 'completed'}"
+      },
+      {
+        "role": "assistant",
+        "message": "\n\n"
+      },
+      {
+        "role": "tool",
+        "message": "{'eligible': False, 'reason': \"Transaction status is 'completed', not disputed.\"}"
+      },
+      {
+        "role": "assistant",
+        "message": "\n\nI've checked your transaction **txn_001** (Rent payment of $1200 on 2026-08-20). The system shows the transaction status as **completed** and it is **not currently eligible for an automatic refund**.\n\nSince you'd like to raise a dispute, let me transfer you to our human review team who can assist further.\n\n"
+      }
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "user wants to raise a dispute for txn_001. transaction status is completed but user is requesting dispute escalation for review.",
+    "updated_at": "2026-09-15T04:53:36.919347+00:00"
+  },
+  {
+    "ticket_id": "TCK-0006",
+    "user_id": "user_a",
+    "query": "Raise dispute for transaction txn_001",
+    "reason": "dispute raised for transaction txn_001 - rent payment of $1200 dated 2026-08-20 (status: completed)",
+    "status": "pending",
+    "created_at": "2026-09-15T04:53:51.444982+00:00",
+    "conversation_context": [
+      {
+        "role": "system",
+        "message": "You are a helpful assistant that helps users with account-related information (balance, transactions, refund eligibility for a specific transaction). You do NOT have access to general policy information. If asked about general policies rather than the user's specific account, say you don't have that information here and that it should be looked up separately. Never invent policy details."
+      },
+      {
+        "role": "user",
+        "message": "Raise dispute for transaction txn_001"
+      },
+      {
+        "role": "assistant",
+        "message": "\n\nI'll help you with raising a dispute for transaction `txn_001`. Let me first check the transaction status to understand the details, and then escalate this for human review.\n\n"
+      },
+      {
+        "role": "tool",
+        "message": "{'id': 'txn_001', 'date': '2026-08-20', 'amount': -1200, 'desc': 'Rent payment', 'status': 'completed'}"
+      },
+      {
+        "role": "assistant",
+        "message": "\n\n"
+      }
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "dispute raised for transaction txn_001 - rent payment of $1200 dated 2026-08-20 (status: completed)",
+    "updated_at": "2026-09-15T04:53:51.444982+00:00"
   }
 ]

@@ -1,82 +1,124 @@
 import { useState } from "react";
 import { askQuestionStream } from "../api";
+import MessageBubble from "./MessageBubble";
 
-function ChatWindow({ sessionId, currentUser }) {
-  const [messages, setMessages] = useState([]);
+function formatTime() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function ChatWindow({ sessionId, currentUser, onMessageSent }) {
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "Hi! How can I help you today?",
+      timestamp: formatTime(),
+      source: null,
+    },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-async function handleSend() {
+  async function handleSend() {
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", text: input };
+    const userMessage = { role: "user", text: input, timestamp: formatTime() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
-    // Add an empty assistant message that we'll fill in as chunks arrive
-    setMessages((prev) => [...prev, { role: "assistant", text: "" }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", text: "", timestamp: formatTime(), source: "Account Data" },
+    ]);
 
-    await askQuestionStream(input, sessionId, (chunk) => {
+    try {
+      await askQuestionStream(input, sessionId, (chunk) => {
         setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = {
-                role: "assistant",
-                text: updated[lastIndex].text + chunk
-            };
-            return updated;
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            text: updated[lastIndex].text + chunk,
+          };
+          return updated;
         });
-    });
+      });
+    } catch (err) {
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          text: "Sorry, something went wrong reaching the server.",
+        };
+        return updated;
+      });
+      console.error("askQuestionStream failed:", err);
+    }
 
     setLoading(false);
-}
-  
+
+    if (onMessageSent) onMessageSent();
+  }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter") {
-      handleSend();
-    }
+    if (e.key === "Enter") handleSend();
   }
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-      <h3>Chat as {currentUser}</h3>
-
-      <div style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "12px", height: "400px", overflowY: "auto", marginBottom: "12px" }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              textAlign: msg.role === "user" ? "right" : "left",
-              margin: "8px 0"
-            }}
-          >
-            <span
-              style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: "12px",
-                backgroundColor: msg.role === "user" ? "#DCF8C6" : "#F1F0F0",
-                maxWidth: "80%"
-              }}
-            >
-              {msg.text}
-            </span>
-          </div>
-        ))}
-        {loading && <p>Assistant is typing...</p>}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        border: "1px solid #E5E7EB",
+      }}
+    >
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #EEE" }}>
+        <div style={{ fontWeight: 700, fontSize: "16px" }}>Chat with FinAssist</div>
+        <div style={{ fontSize: "13px", color: "#888" }}>Your AI banking assistant</div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+        {messages.map((msg, i) => (
+          <MessageBubble key={i} {...msg} />
+        ))}
+        {loading && (
+          <div style={{ fontSize: "13px", color: "#999", marginLeft: "42px" }}>
+            FinAssist is typing...
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", padding: "14px 20px", borderTop: "1px solid #EEE" }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask something..."
-          style={{ flex: 1, padding: "8px" }}
+          style={{
+            flex: 1,
+            padding: "10px 14px",
+            borderRadius: "8px",
+            border: "1px solid #DDD",
+            fontSize: "14px",
+          }}
         />
-        <button onClick={handleSend} disabled={loading}>
+        <button
+          onClick={handleSend}
+          disabled={loading}
+          style={{
+            backgroundColor: "#4A6CF7",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            padding: "0 18px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
           Send
         </button>
       </div>

@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, json
 from services.router_agent import run_router
 import uuid
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+import os
+import json
 
 
 app = FastAPI()
@@ -12,9 +13,13 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TICKETS_PATH = os.path.join(BASE_DIR, "data/tickets.json")
 
 class UserRequest(BaseModel):
     user_id: str = "user_a"
@@ -63,6 +68,11 @@ async def ask_stream(data: AskRequest):
             yield chunk
 
     return StreamingResponse(event_generator(), media_type="text/plain")
+
+@app.get("/tickets")
+def get_tickets():
+    with open(TICKETS_PATH) as f:
+        return json.load(f)
 
 @app.post("/hello")
 def hello():

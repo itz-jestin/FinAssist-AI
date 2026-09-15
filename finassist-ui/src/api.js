@@ -35,3 +35,8 @@ export async function askQuestionStream(question, sessionId, onChunk) {
         onChunk(chunkText);
     }
 }
+
+export async function getTickets() {
+  const res = await fetch(`${BASE_URL}/tickets`);
+  return res.json(); // array of ticket objects
+}

@@ -15,18 +15,18 @@ client = OpenAI(
 router_tools = [
     {"type": "function", "function": {
         "name": "use_rag",
-        "description": "Searches company policy documents — general refund policy, fee schedules, FAQ, KYC requirements, terms of service. Use this for 'what is your policy on X' style questions.",
+        "description": "Searches company policy documents — general refund policy, fee schedules, FAQ, KYC requirements, terms of service.",
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }},
     {"type": "function", "function": {
         "name": "run_account_agent",
-        "description": "Checks the LOGGED-IN USER'S specific account data — their balance, their transaction status, or refund eligibility for a SPECIFIC transaction ID they provide. Do NOT use this for general policy questions like 'what is your refund policy' — use use_rag for those.",
+        "description": "Checks the LOGGED-IN USER'S specific account data — their balance, their transaction status, refund eligibility or to raise a ticket like escalate to human for a SPECIFIC transaction ID they provide. Do NOT use this for general policy questions like 'what is your refund policy' — use use_rag for those.",
         "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}
     }}
 ]
 
 def use_rag(query):
-    results = search_chunks(query, 3)
+    results = search_chunks(query, 2)
     chunks = results["documents"][0]
     if not chunks:
         return "No relevant information found in the document."
@@ -37,7 +37,7 @@ available_tools = {"use_rag": use_rag, "run_account_agent": run_account_agent}
 def run_router(user_prompt, user_id, session_verified):
     messages = [
         {"role": "system", "content": (
-            "Your job is to only route. For questions about people, documents, or specific facts use use_rag tool. For account-related questions, use run_account_agent. "
+            "Your job is to only route. For questions about people, documents, or specific facts use use_rag tool. For account-related questions, use run_account_agent. Do not answer questions directly. Only use the tools provided. If you cannot find an answer, say 'I cannot find an answer to that question.' Answer respectfully to the user."
         )},
         {"role": "user", "content": user_prompt}
     ]
@@ -83,6 +83,8 @@ def run_router(user_prompt, user_id, session_verified):
                 stream=True
             )
         for chunk in stream:
+            if not chunk.choices:
+                continue
             delta = chunk.choices[0].delta
             if delta.content:
                 yield delta.content

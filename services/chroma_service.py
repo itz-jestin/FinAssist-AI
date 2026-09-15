@@ -48,11 +48,11 @@ def search_chunks(query,n_results = 5):
     return results
 
 
-print(search_chunks("what is the company policy?",n_results = 5))
+
 
 def ingest_document(file_path, pdf_name):
     pdf_text = extract_pdf_text(file_path)
-    chunks = split(pdf_text, 5)
+    chunks = split(pdf_text, 2)
     store_chunks(chunks, pdf_name)
 
 if __name__ == "__main__":
