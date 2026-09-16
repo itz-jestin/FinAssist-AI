@@ -44,7 +44,7 @@ def run_router(user_prompt, user_id, session_verified):
 
     max_loop = 8
     loop_count = 0
-    while loop_count != max_loop:
+    while loop_count < max_loop:
         response = client.chat.completions.create(
             model=os.getenv("MODEL"),
             messages=messages,
@@ -66,13 +66,13 @@ def run_router(user_prompt, user_id, session_verified):
                 fun_out = org_function_name(args["query"])
             elif org_function_name == run_account_agent:
                 fun_out = org_function_name(args["query"], user_id, session_verified)
-            print(fun_out)
+            # print(fun_out)
             messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
 
         loop_count += 1
 
     
-    if loop_count == max_loop:
+    if loop_count >= max_loop:
         yield "Maximum loop count reached. The router could not find a suitable answer."
     else:
         stream = client.chat.completions.create(

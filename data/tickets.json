@@ -31,7 +31,7 @@
     "user_id": "USR-2048",
     "query": "There is a transaction on my account that I did not make. I think someone has stolen my account.",
     "reason": "fraud_report",
-    "status": "in_progress",
+    "status": "updated",
     "created_at": "2026-08-31T07:42:00+05:30",
     "conversation_context": [
       {
@@ -53,7 +53,7 @@
     ],
     "priority": "high",
     "resolved_by": null,
-    "resolution_notes": null,
+    "resolution_notes": "I done checking.",
     "category": "fraud",
     "updated_at": "2026-08-31T07:50:00+05:30"
   },

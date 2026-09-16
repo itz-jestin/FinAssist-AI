@@ -37,56 +37,25 @@ function formatDate(iso) {
 }
 
 function ConversationContext({ context }) {
-  if (!context || context.length === 0) {
-    return <div style={{ fontSize: "13px", color: "#999" }}>No conversation context.</div>;
+  // User-facing view: only show actual conversational turns.
+  // Tool calls and system prompts are internal/debugging detail and are
+  // intentionally hidden here (they're visible in the Admin panel instead).
+  const visible = (context || []).filter(
+    (msg) => (msg.role === "user" || msg.role === "assistant") && msg.message && msg.message.trim()
+  );
+
+  if (visible.length === 0) {
+    return (
+      <div style={{ fontSize: "13px", color: "#999", textAlign: "left" }}>
+        No conversation details available yet.
+      </div>
+    );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {context.map((msg, i) => {
-        if (!msg.message || !msg.message.trim()) return null;
-
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", textAlign: "left" }}>
+      {visible.map((msg, i) => {
         const isUser = msg.role === "user";
-        const isTool = msg.role === "tool";
-        const isSystem = msg.role === "system";
-
-        if (isTool) {
-          return (
-            <div
-              key={i}
-              style={{
-                fontSize: "12px",
-                fontFamily: "monospace",
-                backgroundColor: "#F5F5F5",
-                border: "1px dashed #DDD",
-                borderRadius: "6px",
-                padding: "8px 10px",
-                color: "#666",
-              }}
-            >
-              tool result: {msg.message}
-            </div>
-          );
-        }
-
-        if (isSystem) {
-          return (
-            <div
-              key={i}
-              style={{
-                fontSize: "12px",
-                backgroundColor: "#FFF9E6",
-                border: "1px solid #F0E4B0",
-                borderRadius: "6px",
-                padding: "8px 10px",
-                color: "#8a6d00",
-              }}
-            >
-              system: {msg.message}
-            </div>
-          );
-        }
-
         return (
           <div
             key={i}
@@ -98,11 +67,16 @@ function ConversationContext({ context }) {
             <div
               style={{
                 maxWidth: "85%",
-                backgroundColor: isUser ? "#EEF1FF" : "#F3F4F8",
-                borderRadius: "10px",
-                padding: "8px 12px",
+                backgroundColor: isUser ? "#4A6CF7" : "#F3F4F8",
+                color: isUser ? "#fff" : "#1a1a1a",
+                borderRadius: "12px",
+                borderTopRightRadius: isUser ? "4px" : "12px",
+                borderTopLeftRadius: isUser ? "12px" : "4px",
+                padding: "9px 13px",
                 fontSize: "13px",
+                lineHeight: 1.45,
                 whiteSpace: "pre-wrap",
+                textAlign: "left",
               }}
             >
               {msg.message}
@@ -116,53 +90,73 @@ function ConversationContext({ context }) {
 
 function TicketDetail({ ticket, onClose }) {
   return (
-    <div style={{ borderTop: "1px solid #EEE", marginTop: "12px", paddingTop: "12px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <span style={{ fontWeight: 700 }}>#{ticket.ticket_id}</span> <StatusBadge status={ticket.status} />
-        </div>
-        <div style={{ fontSize: "12px", color: "#999" }}>{formatDate(ticket.created_at)}</div>
-      </div>
-
-      <div style={{ fontSize: "13px", color: "#555", margin: "6px 0 12px" }}>{ticket.reason}</div>
-
-      {ticket.resolution_notes && (
-        <div
-          style={{
-            fontSize: "13px",
-            backgroundColor: "#E6F4EA",
-            color: "#1E7B34",
-            padding: "8px 10px",
-            borderRadius: "6px",
-            marginBottom: "12px",
-          }}
-        >
-          {ticket.resolution_notes}
-        </div>
-      )}
-
-      <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px" }}>Conversation Context</div>
-      <ConversationContext context={ticket.conversation_context} />
-
+    <div style={{ textAlign: "left" }}>
       <button
         onClick={onClose}
         style={{
-          marginTop: "12px",
+          marginBottom: "14px",
           background: "none",
           border: "none",
           color: "#4A6CF7",
           fontSize: "13px",
+          fontWeight: 600,
           cursor: "pointer",
           padding: 0,
         }}
       >
         &larr; Back to list
       </button>
+
+      <div
+        style={{
+          border: "1px solid #E5E7EB",
+          borderRadius: "10px",
+          padding: "16px 18px",
+          backgroundColor: "#FAFBFF",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <span style={{ fontWeight: 700, fontSize: "15px" }}>#{ticket.ticket_id}</span>{" "}
+            <StatusBadge status={ticket.status} />
+          </div>
+          <div style={{ fontSize: "12px", color: "#999" }}>{formatDate(ticket.created_at)}</div>
+        </div>
+
+        <div style={{ fontSize: "13px", color: "#555", margin: "10px 0 0" }}>{ticket.reason}</div>
+
+        {ticket.resolution_notes && (
+          <div
+            style={{
+              fontSize: "13px",
+              backgroundColor: "#E6F4EA",
+              color: "#1E7B34",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              marginTop: "14px",
+            }}
+          >
+            <strong>Resolution:</strong> {ticket.resolution_notes}
+          </div>
+        )}
+      </div>
+
+      <div style={{ fontWeight: 600, fontSize: "13px", margin: "20px 0 10px" }}>Conversation</div>
+      <div
+        style={{
+          border: "1px solid #E5E7EB",
+          borderRadius: "10px",
+          padding: "16px 18px",
+          backgroundColor: "#fff",
+        }}
+      >
+        <ConversationContext context={ticket.conversation_context} />
+      </div>
     </div>
   );
 }
 
-function TicketsPanel({ refreshKey = 0 }) {
+function TicketsPanel({ refreshKey = 0, currentUser }) {
   const [tickets, setTickets] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -173,7 +167,12 @@ function TicketsPanel({ refreshKey = 0 }) {
   function loadTickets(silent = false) {
     if (!silent) setLoading(true);
     getTickets()
-      .then((data) => setTickets(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const all = Array.isArray(data) ? data : [];
+        // Only show tickets belonging to the logged-in user
+        const mine = currentUser ? all.filter((t) => t.user_id === currentUser) : all;
+        setTickets(mine);
+      })
       .catch((err) => setError(err.message || String(err)))
       .finally(() => setLoading(false));
   }
@@ -181,7 +180,7 @@ function TicketsPanel({ refreshKey = 0 }) {
   useEffect(() => {
     loadTickets(refreshKey > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshKey]);
+  }, [refreshKey, currentUser]);
 
   useEffect(() => {
     const interval = setInterval(() => loadTickets(true), 15000);
@@ -211,13 +210,15 @@ function TicketsPanel({ refreshKey = 0 }) {
         backgroundColor: "#fff",
         borderRadius: "12px",
         border: "1px solid #E5E7EB",
-        padding: "16px 20px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        padding: "18px 22px",
         height: "100%",
         overflowY: "auto",
+        textAlign: "left",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <div style={{ fontWeight: 700, fontSize: "16px" }}>Support Tickets</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div style={{ fontWeight: 700, fontSize: "17px" }}>My Tickets</div>
         <button
           onClick={() => loadTickets(false)}
           disabled={loading}

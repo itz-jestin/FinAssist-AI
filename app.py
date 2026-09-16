@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel, json
 from services.router_agent import run_router
 import uuid
@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
+import datetime
 
 
 app = FastAPI()
@@ -24,6 +25,10 @@ TICKETS_PATH = os.path.join(BASE_DIR, "data/tickets.json")
 class UserRequest(BaseModel):
     user_id: str = "user_a"
     session_verified: bool = True
+
+class TicketUpdate(BaseModel):
+    status:str
+    resolution_notes:str | None = None
 
 class AskRequest(BaseModel):
     question: str
@@ -73,6 +78,21 @@ async def ask_stream(data: AskRequest):
 def get_tickets():
     with open(TICKETS_PATH) as f:
         return json.load(f)
+
+@app.patch("/tickets/{ticket_id}")
+def update_ticket(ticket_id: str,update : TicketUpdate):
+    with open(TICKETS_PATH) as f:
+        lst=json.load(f)
+    updated_ticket=None        
+    for item in lst:
+        if item["ticket_id"]==ticket_id:
+            item["status"]=update.status
+            item["resolution_notes"]=update.resolution_notes
+            updated_ticket=item
+            break
+    with open(TICKETS_PATH, "w") as f:
+        json.dump(lst, f, indent=2)
+    return updated_ticket
 
 @app.post("/hello")
 def hello():

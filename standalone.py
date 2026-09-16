@@ -7,6 +7,7 @@ from agents.ticket import load_tickets, save_tickets
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
+from services.router_agent import run_router
 
 loaded_env = load_dotenv(".env")
 client = OpenAI(
@@ -74,8 +75,12 @@ client = OpenAI(
 #         print(f"{model_name}: Execution time: {end - start} seconds")
 
 
-from services.chroma_service import search_chunks
-results = search_chunks("are there transaction fees", 3)
-for chunk in results["documents"][0]:
-    print(chunk)
-    print("---")
+# from services.chroma_service import search_chunks
+# results = search_chunks("are there transaction fees", 3)
+# for chunk in results["documents"][0]:
+#     print(chunk)
+#     print("---")
+
+for chunk in run_router("What is my account balance?","user_a",True):
+    print(chunk,end="",flush=True)
+      
