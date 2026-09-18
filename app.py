@@ -4,6 +4,7 @@ from services.router_agent import run_router
 import uuid
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 import os
 import json
 import datetime
@@ -19,8 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+chat_history_lock = asyncio.Lock()
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TICKETS_PATH = os.path.join(BASE_DIR, "data/tickets.json")
+CHAT_HIST_PATH = os.path.join(BASE_DIR,"data/chat_history.json")
 
 class UserRequest(BaseModel):
     user_id: str = "user_a"
@@ -32,6 +36,9 @@ class TicketUpdate(BaseModel):
 
 class AskRequest(BaseModel):
     question: str
+    session_id: str
+
+class LogoutRequest(BaseModel):
     session_id: str
 
 sessions = {}  # session_id -> {"user_id": ..., "session_verified": ...}
@@ -63,14 +70,46 @@ async def ask_stream(data: AskRequest):
     session = sessions.get(data.session_id)
     if not session:
         return {"error": "Invalid or expired session. Please log in again."}
+    
+    async with chat_history_lock:
+        with open(CHAT_HIST_PATH,"r") as f:
+            chat_hist = json.load(f)
+        if data.session_id not in chat_hist:
+            chat_hist[data.session_id] = []
+        session_history = chat_hist[data.session_id][-6:].copy()
 
     async def event_generator():
+        full_answer = ""
         for chunk in run_router(
             data.question,
             session["user_id"],
-            session["session_verified"]
+            session["session_verified"],
+            session_history
         ):
+            full_answer += chunk
             yield chunk
+        
+        async with chat_history_lock:
+
+            with open(CHAT_HIST_PATH, "r") as f:
+                chat_hist = json.load(f)
+
+            if data.session_id not in chat_hist:
+                chat_hist[data.session_id] = []
+
+            chat_hist[data.session_id].append({
+                "role": "user",
+                "content": data.question
+            })
+
+            chat_hist[data.session_id].append({
+                "role": "assistant",
+                "content": full_answer
+            })
+
+            with open(CHAT_HIST_PATH, "w") as f:
+                json.dump(chat_hist, f, indent=2)
+
 
     return StreamingResponse(event_generator(), media_type="text/plain")
 
@@ -94,6 +133,25 @@ def update_ticket(ticket_id: str,update : TicketUpdate):
         json.dump(lst, f, indent=2)
     return updated_ticket
 
+
+@app.post("/logout")
+async def logout_page(data: LogoutRequest):
+    sessions.pop(data.session_id,None)
+    async with chat_history_lock:
+        helper_function(data.session_id,CHAT_HIST_PATH)
+
+    return {"Session removed succesfully."}    
+
 @app.post("/hello")
 def hello():
     return {"message": "Hello, world!"}
+
+
+def helper_function(session_id,path):
+    with open(path,"r") as f:
+        history = json.load(f)
+
+    history.pop(session_id,None)
+
+    with open(path,"w") as f:
+        json.dump(history, f,indent=2)    

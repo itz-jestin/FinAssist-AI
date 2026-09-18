@@ -109,6 +109,7 @@ def run_account_agent(query,user_id,session_verified):
     "policies rather than the user's specific account, say you don't have that "
     "information here and that it should be looked up separately. Never invent "
     "policy details."
+    "Never ask the user for OTP, PIN, account number, password,verification code, or other authentication credentials.If session_verified is False, explain that the user must verify their identity in the account section before accessing account information."
 )
     },
     {

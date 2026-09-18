@@ -34,13 +34,34 @@ def use_rag(query):
 
 available_tools = {"use_rag": use_rag, "run_account_agent": run_account_agent}
 
-def run_router(user_prompt, user_id, session_verified):
-    messages = [
+messages = [
         {"role": "system", "content": (
             "Your job is to only route. For questions about people, documents, or specific facts use use_rag tool. For account-related questions, use run_account_agent. Do not answer questions directly. Only use the tools provided. If you cannot find an answer, say 'I cannot find an answer to that question.' Answer respectfully to the user."
-        )},
-        {"role": "user", "content": user_prompt}
-    ]
+        )}]
+
+def run_router(user_prompt, user_id, session_verified,chat_history):
+    
+    messages = [
+        {"role": "system", "content": (
+                "Your job is to only route. "
+                "For questions about people, documents, or specific facts "
+                "use the use_rag tool. "
+                "For account-related questions, use run_account_agent. "
+                "If user needs verification say - Please verify first in the account section."
+                "Don't ask for otp,pin,account number for verification."
+                "Do not answer questions directly. "
+                "Only use the tools provided. "
+                "If you cannot find an answer, say "
+                "'I cannot find an answer to that question.' "
+                "Answer respectfully to the user."
+            )}]
+    
+    
+    messages.extend(chat_history)
+
+    messages.append(
+            {"role": "user", "content": user_prompt}
+        )    
 
     max_loop = 8
     loop_count = 0
@@ -75,17 +96,24 @@ def run_router(user_prompt, user_id, session_verified):
     if loop_count >= max_loop:
         yield "Maximum loop count reached. The router could not find a suitable answer."
     else:
-        stream = client.chat.completions.create(
+        try:
+            stream = client.chat.completions.create(
                 model=os.getenv("MODEL"),
                 messages=messages,
-                tools=router_tools,
                 max_tokens=400,
                 stream=True
             )
-        for chunk in stream:
-            if not chunk.choices:
-                continue
-            delta = chunk.choices[0].delta
-            if delta.content:
-                yield delta.content
+        
+            for chunk in stream:
+                if not chunk.choices:
+                    continue
+        
+                delta = chunk.choices[0].delta
+        
+                if delta.content:
+                    yield delta.content
+        
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            yield "Sorry, the AI service is temporarily unavailable. Please try again."
             

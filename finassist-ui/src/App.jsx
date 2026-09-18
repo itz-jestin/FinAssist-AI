@@ -2,6 +2,7 @@ import { useState } from "react";
 import Login from "./components/Login";
 import UserView from "./components/UserView";
 import AdminPanel from "./components/AdminPanel";
+import { logoutPage } from "./api";
 
 function App() {
   const [sessionId, setSessionId] = useState(null);
@@ -17,11 +18,15 @@ function App() {
     setIsAdmin(true);
   }
 
-  function handleLogout() {
-    setSessionId(null);
-    setCurrentUser(null);
-    setIsAdmin(false);
+  async function handleLogout() {
+  if (sessionId) {
+    await logoutPage(sessionId);
   }
+
+  setSessionId(null);
+  setCurrentUser(null);
+  setIsAdmin(false);
+}
 
   if (isAdmin) {
     return <AdminPanel onLogout={handleLogout} />;

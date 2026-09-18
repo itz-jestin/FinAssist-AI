@@ -22,7 +22,7 @@
     ],
     "priority": "medium",
     "resolved_by": null,
-    "resolution_notes": null,
+    "resolution_notes": "",
     "category": "account_management",
     "updated_at": "2026-08-31T08:05:00+05:30"
   },
@@ -180,5 +180,67 @@
     "resolution_notes": null,
     "category": "dispute raised for transaction txn_001 - rent payment of $1200 dated 2026-08-20 (status: completed)",
     "updated_at": "2026-09-15T04:53:51.444982+00:00"
+  },
+  {
+    "ticket_id": "TCK-0007",
+    "user_id": "user_a",
+    "query": "raise a ticket for transaction txn_001",
+    "reason": "user requested to raise a ticket for transaction txn_001.",
+    "status": "resolved",
+    "created_at": "2026-09-16T15:34:51.618182+00:00",
+    "conversation_context": [
+      {
+        "role": "system",
+        "message": "You are a helpful assistant that helps users with account-related information (balance, transactions, refund eligibility for a specific transaction). You do NOT have access to general policy information. If asked about general policies rather than the user's specific account, say you don't have that information here and that it should be looked up separately. Never invent policy details."
+      },
+      {
+        "role": "user",
+        "message": "raise a ticket for transaction txn_001"
+      },
+      {
+        "role": "tool",
+        "message": "{'id': 'txn_001', 'date': '2026-08-20', 'amount': -1200, 'desc': 'Rent payment', 'status': 'completed'}"
+      }
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": "iniu",
+    "category": "user requested to raise a ticket for transaction txn_001.",
+    "updated_at": "2026-09-16T15:34:51.618182+00:00"
+  },
+  {
+    "ticket_id": "TCK-0008",
+    "user_id": "user_a",
+    "query": "Escalate transaction txn_001 to a human agent for further review. The transaction is not eligible for a refund but the user wants it disputed/reviewed.",
+    "reason": "transaction txn_001 ($1,200.00 rent payment, completed on 2026-08-20) is not eligible for a refund under automated policy (status is 'completed', not disputed). however, the user is requesting the transaction be disputed or reviewed by a human agent.",
+    "status": "pending",
+    "created_at": "2026-09-18T07:08:18.564743+00:00",
+    "conversation_context": [
+      {
+        "role": "user",
+        "message": "Escalate transaction txn_001 to a human agent for further review. The transaction is not eligible for a refund but the user wants it disputed/reviewed."
+      },
+      {
+        "role": "assistant",
+        "message": "Let me first look into the transaction details to verify the situation before escalating"
+      },
+      {
+        "role": "tool",
+        "message": "{'id': 'txn_001', 'date': '2026-08-20', 'amount': -1200, 'desc': 'Rent payment', 'status': 'completed'}"
+      },
+      {
+        "role": "tool",
+        "message": "{'eligible': False, 'reason': \"Transaction status is 'completed', not disputed.\"}"
+      },
+      {
+        "role": "assistant",
+        "message": "I've verified the transaction details:\n\n- **Transaction ID**: txn_001\n- **Description**: Rent payment\n- **Amount**: $1,200.00\n- **Status**: Completed\n- **Refund Eligibility**: Not eligible (reason: transaction is completed and not disputed)\n\nThis confirms the situation \u2014 the transaction is completed and not refundable under normal policy. Since the user wants to dispute/review it, I'll escalate it to a human agent"
+      }
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": null,
+    "category": "transaction txn_001 ($1,200.00 rent payment, completed on 2026-08-20) is not eligible for a refund under automated policy (status is 'completed', not disputed). however, the user is requesting the transaction be disputed or reviewed by a human agent.",
+    "updated_at": "2026-09-18T07:08:18.564743+00:00"
   }
 ]

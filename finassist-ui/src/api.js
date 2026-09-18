@@ -73,3 +73,12 @@ export async function updateTicketStatus(ticketId, status, resolutionNotes, admi
   }
   return res.json();
 }
+
+export async function logoutPage(sessionId){
+  const res = await fetch(`${BASE_URL}/logout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId }),
+  })
+  return res.json();
+}

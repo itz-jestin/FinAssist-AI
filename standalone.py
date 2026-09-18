@@ -45,35 +45,35 @@ client = OpenAI(
 
 # print(run_account_agent("What is your refund policy?", "user_a", True))
 
-# models_to_test = [
-#     "nvidia/nemotron-3-ultra-550b-a55b"
-# ]
 
-# test_tools = [{
-#     "type": "function",
-#     "function": {
-#         "name": "test_tool",
-#         "description": "A test tool.",
-#         "parameters": {"type": "object", "properties": {"x": {"type": "string"}}, "required": ["x"]}
-#     }
-# }]
+models = client.models.list()
 
-# for model_name in models_to_test:
-#     try:
-#         start = time.time()
-#         response = client.chat.completions.create(
-#             model=model_name,
-#             messages=[{"role": "user", "content": "call test_tool with x='hello'"}],
-#             tools=test_tools
-#         )
-#         print(f"{model_name}: SUCCESS")
-#         print(response.choices[0].message.tool_calls)
-#     except Exception as e:
-#         print(f"{model_name}: FAILED — {e}")
-#     finally:
-#         end = time.time()
-#         print(f"{model_name}: Execution time: {end - start} seconds")
+for m in models.data:
+    model = m.id
 
+    try:
+        start = time.time()
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Write a Python function to check whether a string is a palindrome."
+                }
+            ],
+            max_tokens=200
+        )
+
+        elapsed = time.time() - start
+
+        print(f"{model}: ✅ WORKS — {elapsed:.2f}s")
+
+    except Exception as e:
+        elapsed = time.time() - start
+
+        print(f"{model}: ❌ FAILED — {e}")
+        print(f"{model}: Execution time: {elapsed:.2f}s")
 
 # from services.chroma_service import search_chunks
 # results = search_chunks("are there transaction fees", 3)
@@ -81,6 +81,6 @@ client = OpenAI(
 #     print(chunk)
 #     print("---")
 
-for chunk in run_router("What is my account balance?","user_a",True):
-    print(chunk,end="",flush=True)
+# for chunk in run_router("What is my account balance?","user_a",True):
+#     print(chunk,end="",flush=True)
       
