@@ -1,5 +1,5 @@
 from data.mock_accounts import accounts
-from openai import OpenAI
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 import os
 import json
@@ -7,7 +7,7 @@ from agents.ticket import escalate_to_human
 import time
 
 loaded_env = load_dotenv(".env")
-client = OpenAI(
+client = AsyncOpenAI(
     api_key=os.getenv("NVIDIA_API_KEY"),
     base_url=os.getenv("BASE_URL")
 )
@@ -43,7 +43,7 @@ def calculate_refund_eligibility(user_id, session_verified, transaction_id):
                 return {"eligible": False, "reason": f"Transaction status is '{txn['status']}', not disputed."}
     return {"eligible": False, "reason": "Transaction not found."}
 
-def run_account_agent(query,user_id,session_verified):
+async def run_account_agent(query,user_id,session_verified):
     print(f"Running account agent for user_id: {user_id}, session_verified: {session_verified}")
     tool_schemas = [
         {
@@ -108,10 +108,14 @@ def run_account_agent(query,user_id,session_verified):
     "You do NOT have access to general policy information. If asked about general "
     "policies rather than the user's specific account, say you don't have that "
     "information here and that it should be looked up separately. Never invent "
-    "policy details."
-    "Never ask the user for OTP, PIN, account number, password,verification code, or other authentication credentials.If session_verified is False, explain that the user must verify their identity in the account section before accessing account information."
-)
-    },
+    "policy details. "
+    "\n\nSimply call the appropriate tool for the user's request. If the tool's "
+    "result indicates verification is required, tell the user they must verify "
+    "their identity in the account section before you can access that information. "
+    "Never ask the user for OTP, PIN, account number, password, verification code, "
+    "or other authentication credentials — verification happens through the app, "
+    "not through chat."
+     )},
     {
         "role":"user",
         "content":query
@@ -119,7 +123,7 @@ def run_account_agent(query,user_id,session_verified):
 
     for _ in range(3):
             start = time.time()
-            response = client.chat.completions.create(
+            response =await client.chat.completions.create(
                 model = os.getenv("MODEL"),
                 messages=messages,
                 tools=tool_schemas,
@@ -146,8 +150,10 @@ def run_account_agent(query,user_id,session_verified):
             messages.append(message.model_dump())
     
             if not message.tool_calls:
-                return message.content
-    
+                try:
+                    return message.content
+                except Exception as e:
+                    return "I'm having trouble connecting to the service now.Please try again in a moment."
             for call in message.tool_calls:
                 name = call.function.name
                 print(name)

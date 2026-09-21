@@ -66,5 +66,83 @@
       "role": "assistant",
       "content": "Sorry, the AI service is temporarily unavailable. Please try again."
     }
+  ],
+  "e2dcb8a0-8473-4d0c-bb01-cd45ce0d1c6c": [
+    {
+      "role": "user",
+      "content": "what is my transaction status?"
+    },
+    {
+      "role": "assistant",
+      "content": "Sorry, the AI service is temporarily unavailable. Please try again."
+    },
+    {
+      "role": "user",
+      "content": "what happened?"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems there was a temporary service issue earlier, and I apologize for the inconvenience! Now that things are back up, let me try to help with your transaction status question.\n\nSince your question about transaction status appears to be account-related, let me look into that for you.\n\n<run_account_agent>\n<parameters>\n<question>What is my transaction status?</question>\n</parameters>\n</run_account_agent>"
+    },
+    {
+      "role": "user",
+      "content": "what is this?"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems like your transaction status question hasn't been answered yet! Let me try again to look into that for you.\n\n<run_account_agent>\n<parameters>\n<question>What is my transaction status?</question>\n</parameters>\n</run_account_agent>"
+    },
+    {
+      "role": "user",
+      "content": "transaction status?"
+    },
+    {
+      "role": "assistant",
+      "content": "To check your transaction status, I'll need the **transaction ID** you'd like to look up. Could you please provide it?"
+    },
+    {
+      "role": "user",
+      "content": "txn_003"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems like your transaction status question hasn't been answered yet! Let me try again to look into that for you.\n\n<run_account_agent>\n<parameters>\n<question>What is my transaction status?</question>\n</parameters>\n</run_account_agent>"
+    }
+  ],
+  "c3a48e8c-22cc-4bda-98ae-66a0ac643eb6": [
+    {
+      "role": "user",
+      "content": "account balance?"
+    },
+    {
+      "role": "assistant",
+      "content": "Your current account balance is **$45,230.50**. \n\nIs there anything else I can help you with?"
+    },
+    {
+      "role": "user",
+      "content": "refund for txn_005"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm having trouble connecting to the service right now. Please try again in a moment."
+    }
+  ],
+  "9b15c3d1-2e5c-46eb-b2d3-ef4b5abe9557": [
+    {
+      "role": "user",
+      "content": "account balance"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems that verification is required before I can access your account details. Please verify yourself through the **account section** in the app, and then I'll be able to help with your balance!"
+    },
+    {
+      "role": "user",
+      "content": "refund"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm having trouble connecting to the service right now. Please try again in a moment."
+    }
   ]
 }

@@ -80,7 +80,7 @@ async def ask_stream(data: AskRequest):
 
     async def event_generator():
         full_answer = ""
-        for chunk in run_router(
+        async for chunk in run_router(
             data.question,
             session["user_id"],
             session["session_verified"],

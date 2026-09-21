@@ -242,5 +242,40 @@
     "resolution_notes": null,
     "category": "transaction txn_001 ($1,200.00 rent payment, completed on 2026-08-20) is not eligible for a refund under automated policy (status is 'completed', not disputed). however, the user is requesting the transaction be disputed or reviewed by a human agent.",
     "updated_at": "2026-09-18T07:08:18.564743+00:00"
+  },
+  {
+    "ticket_id": "TCK-0009",
+    "user_id": "user_a",
+    "query": "raise dispute ticket for txn_001 rent payment $1200 completed",
+    "reason": "user wants to raise a dispute ticket for txn_001 (rent payment of $1200, completed on 2026-08-20). the transaction is completed and not currently disputed. refund eligibility check returned ineligible because the transaction hasn't been disputed yet. user is requesting to initiate a dispute.",
+    "status": "in_progress",
+    "created_at": "2026-09-21T02:53:54.985699+00:00",
+    "conversation_context": [
+      {
+        "role": "user",
+        "message": "raise dispute ticket for txn_001 rent payment $1200 completed"
+      },
+      {
+        "role": "assistant",
+        "message": "I'll help you with that dispute. Let me first look into the transaction details and check your eligibility. Let me pull up the information now"
+      },
+      {
+        "role": "tool",
+        "message": "{'id': 'txn_001', 'date': '2026-08-20', 'amount': -1200, 'desc': 'Rent payment', 'status': 'completed'}"
+      },
+      {
+        "role": "tool",
+        "message": "{'eligible': False, 'reason': \"Transaction status is 'completed', not disputed.\"}"
+      },
+      {
+        "role": "assistant",
+        "message": "I found the transaction details. Here's what I can see:\n\n- **Transaction ID**: `txn_001`\n- **Description**: Rent payment\n- **Amount**: $1,200\n- **Status**: Completed (on 2026-08-20)\n\nHowever, the system shows that you're **not eligible for an automatic refund** at this stage because the transaction is marked as \"completed\" and hasn't been disputed yet.\n\nSince the dispute process isn't something I can handle directly through the available tools, let me escalate this to a human agent who can help raise the dispute ticket for you"
+      }
+    ],
+    "priority": "medium",
+    "resolved_by": null,
+    "resolution_notes": "The payement will be deducted from the reciever's account.\n",
+    "category": "user wants to raise a dispute ticket for txn_001 (rent payment of $1200, completed on 2026-08-20). the transaction is completed and not currently disputed. refund eligibility check returned ineligible because the transaction hasn't been disputed yet. user is requesting to initiate a dispute.",
+    "updated_at": "2026-09-21T02:53:54.985699+00:00"
   }
 ]

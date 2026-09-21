@@ -1,13 +1,13 @@
 import json
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
 from agents.account_tools import run_account_agent
 from services.chroma_service import search_chunks
 
 load_dotenv(".env")
 
-client = OpenAI(
+client = AsyncOpenAI(
     api_key=os.getenv("NVIDIA_API_KEY"),
     base_url=os.getenv("BASE_URL")
 )
@@ -34,27 +34,24 @@ def use_rag(query):
 
 available_tools = {"use_rag": use_rag, "run_account_agent": run_account_agent}
 
-messages = [
-        {"role": "system", "content": (
-            "Your job is to only route. For questions about people, documents, or specific facts use use_rag tool. For account-related questions, use run_account_agent. Do not answer questions directly. Only use the tools provided. If you cannot find an answer, say 'I cannot find an answer to that question.' Answer respectfully to the user."
-        )}]
 
-def run_router(user_prompt, user_id, session_verified,chat_history):
+
+async def run_router(user_prompt, user_id, session_verified,chat_history):
     
     messages = [
         {"role": "system", "content": (
-                "Your job is to only route. "
-                "For questions about people, documents, or specific facts "
-                "use the use_rag tool. "
-                "For account-related questions, use run_account_agent. "
-                "If user needs verification say - Please verify first in the account section."
-                "Don't ask for otp,pin,account number for verification."
-                "Do not answer questions directly. "
-                "Only use the tools provided. "
-                "If you cannot find an answer, say "
-                "'I cannot find an answer to that question.' "
-                "Answer respectfully to the user."
-            )}]
+    "Your job is to only route. "
+    "For questions about people, documents, or specific facts, use the use_rag tool. "
+    "For account-related questions (balance, transactions, refunds), use run_account_agent. "
+    "\n\nYou do not need to check verification status yourself — simply call the "
+    "appropriate tool. If the tool's result indicates verification is required, "
+    "relay that to the user by saying: 'Please verify first in the account section.' "
+    "Do not ask the user for their OTP, PIN, or account number as a form of "
+    "verification. "
+    "\n\nDo not answer questions directly — only use the tools provided. "
+    "If you cannot find an answer, say 'I cannot find an answer to that question.' "
+    "Answer respectfully to the user."
+)}]
     
     
     messages.extend(chat_history)
@@ -66,7 +63,7 @@ def run_router(user_prompt, user_id, session_verified,chat_history):
     max_loop = 8
     loop_count = 0
     while loop_count < max_loop:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=os.getenv("MODEL"),
             messages=messages,
             tools=router_tools,
@@ -86,8 +83,8 @@ def run_router(user_prompt, user_id, session_verified,chat_history):
             if org_function_name == use_rag:
                 fun_out = org_function_name(args["query"])
             elif org_function_name == run_account_agent:
-                fun_out = org_function_name(args["query"], user_id, session_verified)
-            # print(fun_out)
+                fun_out = await org_function_name(args["query"], user_id, session_verified)
+                print("Function out of account agent: ",fun_out)
             messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
 
         loop_count += 1
@@ -97,14 +94,14 @@ def run_router(user_prompt, user_id, session_verified,chat_history):
         yield "Maximum loop count reached. The router could not find a suitable answer."
     else:
         try:
-            stream = client.chat.completions.create(
+            stream =await client.chat.completions.create(
                 model=os.getenv("MODEL"),
                 messages=messages,
                 max_tokens=400,
                 stream=True
             )
         
-            for chunk in stream:
+            async for chunk in stream:
                 if not chunk.choices:
                     continue
         
@@ -115,5 +112,5 @@ def run_router(user_prompt, user_id, session_verified,chat_history):
         
         except Exception as e:
             print(f"Streaming error: {e}")
-            yield "Sorry, the AI service is temporarily unavailable. Please try again."
+            yield "I'm having trouble connecting to the service right now. Please try again in a moment."
             
