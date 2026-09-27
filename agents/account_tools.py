@@ -9,7 +9,7 @@ import time
 loaded_env = load_dotenv(".env")
 client = AsyncOpenAI(
     api_key=os.getenv("NVIDIA_API_KEY"),
-    base_url=os.getenv("BASE_URL")
+    base_url=os.getenv("NVIDIA_BASE_URL")
 )
 
 def check_account_balance(user_id, session_verified):
@@ -124,7 +124,7 @@ async def run_account_agent(query,user_id,session_verified):
     for _ in range(3):
             start = time.time()
             response =await client.chat.completions.create(
-                model = os.getenv("MODEL"),
+                model = os.getenv("NVIDIA_MODEL"),
                 messages=messages,
                 tools=tool_schemas,
                 max_tokens=400,
@@ -151,6 +151,8 @@ async def run_account_agent(query,user_id,session_verified):
     
             if not message.tool_calls:
                 try:
+                    if message.content and "<tool_call>" in message.content:
+                        continue
                     return message.content
                 except Exception as e:
                     return "I'm having trouble connecting to the service now.Please try again in a moment."

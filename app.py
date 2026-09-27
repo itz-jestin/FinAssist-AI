@@ -80,12 +80,17 @@ async def ask_stream(data: AskRequest):
 
     async def event_generator():
         full_answer = ""
+        first_chunk = True
         async for chunk in run_router(
             data.question,
             session["user_id"],
             session["session_verified"],
             session_history
-        ):
+        ):  
+            if first_chunk:
+                first_chunk = False
+                yield chunk
+                continue
             full_answer += chunk
             yield chunk
         

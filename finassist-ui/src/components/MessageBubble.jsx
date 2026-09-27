@@ -57,7 +57,7 @@ function MessageBubble({ role, text, timestamp, source }) {
         </div>
         {source && !isUser && (
           <div style={{ textAlign: "left" }}>
-            <SourceBadge label={source} />
+            <SourceBadge toolName={source} />
           </div>
         )}
       </div>

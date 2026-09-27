@@ -1,4 +1,13 @@
-function SourceBadge({ label = "Account Data" }) {
+const TOOL_LABELS = {
+  use_rag: { emoji: "📄", label: "Policy Search" },
+  run_account_agent: { emoji: "💰", label: "Account Data" },
+  escalate_to_human: { emoji: "🚨", label: "Escalated" },
+};
+
+function SourceBadge({ toolName }) {
+  const badge = TOOL_LABELS[toolName];
+  if (!badge) return null;
+
   return (
     <span
       style={{
@@ -14,7 +23,7 @@ function SourceBadge({ label = "Account Data" }) {
         marginTop: "6px",
       }}
     >
-      📊 {label}
+      {badge.emoji} {badge.label}
     </span>
   );
 }

@@ -144,5 +144,61 @@
       "role": "assistant",
       "content": "I'm having trouble connecting to the service right now. Please try again in a moment."
     }
+  ],
+  "c1087567-55ac-414a-91b3-1359e61c8b0d": [
+    {
+      "role": "user",
+      "content": "transaction status for txn_001"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm having trouble connecting to the service right now. Please try again in a moment."
+    }
+  ],
+  "dead69b2-39f3-4294-b184-672a9ca392cf": [
+    {
+      "role": "user",
+      "content": "transaction status for txn_001\\"
+    },
+    {
+      "role": "assistant",
+      "content": "Here are the details for transaction **txn_001**:\n\n| Field       | Details     |\n|-------------|-------------|\n| **Transaction ID** | txn_001 |\n| **Date** | August 20, 2026 |\n| **Amount** | -\u20b91,200 |\n| **Description** | Rent payment |\n| **Status** | \u2705 **Completed** |\n\nThe transaction has been successfully completed. Is there anything else I can help you with?"
+    }
+  ],
+  "3aaa6b54-19c0-43d9-91af-b0cecfacdd06": [
+    {
+      "role": "user",
+      "content": "refund policy?"
+    },
+    {
+      "role": "assistant",
+      "content": "Based on the information retrieved, here's the refund policy:\n\n**How to Request a Refund:**\n- Contact customer support with the relevant **transaction or reference number**.\n- Explain why you believe a refund is applicable.\n\n**Eligibility & Processing:**\n- Refund eligibility and processing time depend on the specific **service involved** and applicable terms.\n\n**What You Need to Provide:**\n- The **transaction reference** and relevant details through an official support channel.\n\nWould you like to check on a specific transaction or need further assistance?"
+    },
+    {
+      "role": "user",
+      "content": "balance?"
+    },
+    {
+      "role": "assistant",
+      "content": "Your current account balance is **$45,230.50**. \n\nIs there anything else I can help you with? For example, I can also check transaction statuses or calculate refund eligibility if you have a specific transaction in mind."
+    }
+  ],
+  "7806ce77-5621-479d-887e-a731e5145243": [
+    {
+      "role": "user",
+      "content": "refund policy?"
+    },
+    {
+      "role": "assistant",
+      "content": "Here's what I found about the refund policy:\n\n**Refund Policy:**\n\n- **Eligibility and processing time** depend on the specific service involved and the applicable terms.\n- To request a refund, you should **contact customer support** with the relevant **transaction or reference number** and explain why you believe a refund is applicable.\n- You'll need to provide the transaction reference and relevant details through an official support channel.\n\nIf you have a specific transaction you'd like to look into, feel free to share the details and I can help further!"
+    },
+    {
+      "role": "user",
+      "content": "balance?"
+    },
+    {
+      "role": "assistant",
+      "content": "Please verify first in the **account section** of the app. Once your identity is verified, I can look into your balance for you!"
+    }
   ]
 }

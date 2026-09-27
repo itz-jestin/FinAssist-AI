@@ -28,21 +28,36 @@ function ChatWindow({ sessionId, currentUser, onMessageSent }) {
 
     setMessages((prev) => [
       ...prev,
-      { role: "assistant", text: "", timestamp: formatTime(), source: "Account Data" },
+      { role: "assistant", text: "", timestamp: formatTime(), source: null },
     ]);
 
     try {
-      await askQuestionStream(input, sessionId, (chunk) => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIndex = updated.length - 1;
-          updated[lastIndex] = {
-            ...updated[lastIndex],
-            text: updated[lastIndex].text + chunk,
-          };
-          return updated;
-        });
-      });
+      await askQuestionStream(
+        input,
+        sessionId,
+        (chunk) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              text: updated[lastIndex].text + chunk,
+            };
+            return updated;
+          });
+        },
+        (tool) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              source: tool,
+            };
+            return updated;
+          });
+        }
+      );
     } catch (err) {
       setMessages((prev) => {
         const updated = [...prev];

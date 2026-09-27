@@ -9,7 +9,7 @@ load_dotenv(".env")
 
 client = AsyncOpenAI(
     api_key=os.getenv("NVIDIA_API_KEY"),
-    base_url=os.getenv("BASE_URL")
+    base_url=os.getenv("NVIDIA_BASE_URL")
 )
 
 router_tools = [
@@ -62,9 +62,11 @@ async def run_router(user_prompt, user_id, session_verified,chat_history):
 
     max_loop = 8
     loop_count = 0
+    last_tool_used = None
+
     while loop_count < max_loop:
         response = await client.chat.completions.create(
-            model=os.getenv("MODEL"),
+            model=os.getenv("NVIDIA_MODEL"),
             messages=messages,
             tools=router_tools,
             max_tokens=400,
@@ -77,6 +79,7 @@ async def run_router(user_prompt, user_id, session_verified,chat_history):
 
         for tool in call.tool_calls:
             function_name = tool.function.name
+            last_tool_used = function_name
             org_function_name = available_tools.get(function_name)
             print(f"Calling tool: {function_name}")
             args = json.loads(tool.function.arguments)
@@ -88,14 +91,15 @@ async def run_router(user_prompt, user_id, session_verified,chat_history):
             messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
 
         loop_count += 1
-
+    meta = {"tool": last_tool_used}
+    yield json.dumps(meta) +"\n"
     
     if loop_count >= max_loop:
         yield "Maximum loop count reached. The router could not find a suitable answer."
     else:
         try:
             stream =await client.chat.completions.create(
-                model=os.getenv("MODEL"),
+                model=os.getenv("NVIDIA_MODEL"),
                 messages=messages,
                 max_tokens=400,
                 stream=True

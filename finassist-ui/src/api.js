@@ -6,7 +6,7 @@ export async function verifyUser(userId, sessionVerified) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id: userId, session_verified: sessionVerified }),
   });
-  return res.json(); // { session_id: "..." }
+  return res.json();
 }
 
 export async function adminLogin(username, password) {
@@ -18,7 +18,7 @@ export async function adminLogin(username, password) {
   if (!res.ok) {
     return { success: false };
   }
-  return res.json(); // { success: true, token: "..." }
+  return res.json();
 }
 
 export async function askQuestion(question, sessionId) {
@@ -27,10 +27,10 @@ export async function askQuestion(question, sessionId) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question, session_id: sessionId }),
   });
-  return res.json(); // { answer: "..." }
+  return res.json();
 }
 
-export async function askQuestionStream(question, sessionId, onChunk) {
+export async function askQuestionStream(question, sessionId, onChunk, onToolDetected) {
   const res = await fetch(`${BASE_URL}/ask_stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -39,17 +39,42 @@ export async function askQuestionStream(question, sessionId, onChunk) {
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
+  let buffer = "";
+  let metaParsed = false;
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    const chunkText = decoder.decode(value, { stream: true });
-    onChunk(chunkText);
+
+    buffer += decoder.decode(value, { stream: true });
+
+    if (!metaParsed) {
+      const newlineIndex = buffer.indexOf("\n");
+      if (newlineIndex === -1) continue;
+
+      const metaLine = buffer.slice(0, newlineIndex);
+      buffer = buffer.slice(newlineIndex + 1);
+      metaParsed = true;
+
+      try {
+        const meta = JSON.parse(metaLine);
+        if (onToolDetected) onToolDetected(meta.tool);
+      } catch (e) {
+        console.error("Failed to parse meta line:", e);
+      }
+
+      if (buffer) {
+        onChunk(buffer);
+        buffer = "";
+      }
+      continue;
+    }
+
+    onChunk(buffer);
+    buffer = "";
   }
 }
 
-// Returns all tickets. Filtering by user is done client-side in TicketsPanel,
-// unless your backend supports ?user_id=... filtering, in which case pass userId here.
 export async function getTickets(userId) {
   const url = userId ? `${BASE_URL}/tickets?user_id=${encodeURIComponent(userId)}` : `${BASE_URL}/tickets`;
   const res = await fetch(url);
@@ -74,11 +99,11 @@ export async function updateTicketStatus(ticketId, status, resolutionNotes, admi
   return res.json();
 }
 
-export async function logoutPage(sessionId){
+export async function logoutPage(sessionId) {
   const res = await fetch(`${BASE_URL}/logout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId }),
-  })
+  });
   return res.json();
 }
