@@ -1,14 +1,12 @@
-from fastapi import FastAPI,HTTPException
-from pydantic import BaseModel, json
-from services.router_agent import run_router
-import uuid
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from services.router_agent import run_router, ERROR_MSG
+import uuid
 import asyncio
 import os
 import json
-import datetime
-
 
 app = FastAPI()
 
@@ -24,116 +22,91 @@ chat_history_lock = asyncio.Lock()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TICKETS_PATH = os.path.join(BASE_DIR, "data/tickets.json")
-CHAT_HIST_PATH = os.path.join(BASE_DIR,"data/chat_history.json")
+CHAT_HIST_PATH = os.path.join(BASE_DIR, "data/chat_history.json")
+
 
 class UserRequest(BaseModel):
     user_id: str = "user_a"
     session_verified: bool = True
 
+
 class TicketUpdate(BaseModel):
-    status:str
-    resolution_notes:str | None = None
+    status: str
+    resolution_notes: str | None = None
+
 
 class AskRequest(BaseModel):
     question: str
     session_id: str
 
+
 class LogoutRequest(BaseModel):
     session_id: str
 
+
 sessions = {}  # session_id -> {"user_id": ..., "session_verified": ...}
+
 
 @app.post("/verify")
 def verify_user(data: UserRequest):
     session_id = str(uuid.uuid4())
     sessions[session_id] = {
         "user_id": data.user_id,
-        "session_verified": data.session_verified
+        "session_verified": data.session_verified,
     }
     return {"session_id": session_id}
+
 
 @app.post("/ask")
 async def ask(data: AskRequest):
     session = sessions.get(data.session_id)
     if not session:
-        return {"error": "Invalid or expired session. Please log in again."}
+        raise HTTPException(status_code=401, detail="Invalid or expired session. Please log in again.")
 
-    answer = run_router(
-        data.question,
-        session["user_id"],
-        session["session_verified"]
-    )
-    return {"answer": answer}
-
-@app.post("/ask_stream")
-async def ask_stream(data: AskRequest):
-    session = sessions.get(data.session_id)
-    if not session:
-        return {"error": "Invalid or expired session. Please log in again."}
-    
     async with chat_history_lock:
-        with open(CHAT_HIST_PATH,"r") as f:
+        with open(CHAT_HIST_PATH, "r") as f:
             chat_hist = json.load(f)
-        if data.session_id not in chat_hist:
-            chat_hist[data.session_id] = []
-        session_history = chat_hist[data.session_id][-6:].copy()
+        session_history = chat_hist.get(data.session_id, [])[-6:]
 
     async def event_generator():
-        full_answer = ""
-        first_chunk = True
-        async for chunk in run_router(
-            data.question,
-            session["user_id"],
-            session["session_verified"],
-            session_history
-        ):  
-            if first_chunk:
-                first_chunk = False
-                yield chunk
-                continue
-            full_answer += chunk
-            yield chunk
-        
-        async with chat_history_lock:
+        async for event in run_router(
+            data.question, session["user_id"], session["session_verified"], session_history
+        ):
+            yield json.dumps(event) + "\n"
 
-            with open(CHAT_HIST_PATH, "r") as f:
-                chat_hist = json.load(f)
+            if event["type"] == "done" and event["answer"] != ERROR_MSG:
+                async with chat_history_lock:
+                    with open(CHAT_HIST_PATH, "r") as f:
+                        hist = json.load(f)
+                    hist.setdefault(data.session_id, []).extend([
+                        {"role": "user", "content": data.question},
+                        {"role": "assistant", "content": event["answer"]},
+                    ])
+                    with open(CHAT_HIST_PATH, "w") as f:
+                        json.dump(hist, f, indent=2)
 
-            if data.session_id not in chat_hist:
-                chat_hist[data.session_id] = []
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
 
-            chat_hist[data.session_id].append({
-                "role": "user",
-                "content": data.question
-            })
-
-            chat_hist[data.session_id].append({
-                "role": "assistant",
-                "content": full_answer
-            })
-
-            with open(CHAT_HIST_PATH, "w") as f:
-                json.dump(chat_hist, f, indent=2)
-
-
-    return StreamingResponse(event_generator(), media_type="text/plain")
 
 @app.get("/tickets")
 def get_tickets():
     with open(TICKETS_PATH) as f:
         return json.load(f)
 
+
 @app.patch("/tickets/{ticket_id}")
-def update_ticket(ticket_id: str,update : TicketUpdate):
+def update_ticket(ticket_id: str, update: TicketUpdate):
     with open(TICKETS_PATH) as f:
-        lst=json.load(f)
-    updated_ticket=None        
+        lst = json.load(f)
+    updated_ticket = None
     for item in lst:
-        if item["ticket_id"]==ticket_id:
-            item["status"]=update.status
-            item["resolution_notes"]=update.resolution_notes
-            updated_ticket=item
+        if item["ticket_id"] == ticket_id:
+            item["status"] = update.status
+            item["resolution_notes"] = update.resolution_notes
+            updated_ticket = item
             break
+    if updated_ticket is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
     with open(TICKETS_PATH, "w") as f:
         json.dump(lst, f, indent=2)
     return updated_ticket
@@ -141,22 +114,20 @@ def update_ticket(ticket_id: str,update : TicketUpdate):
 
 @app.post("/logout")
 async def logout_page(data: LogoutRequest):
-    sessions.pop(data.session_id,None)
+    sessions.pop(data.session_id, None)
     async with chat_history_lock:
-        helper_function(data.session_id,CHAT_HIST_PATH)
+        helper_function(data.session_id, CHAT_HIST_PATH)
+    return {"message": "Session removed successfully."}
 
-    return {"Session removed succesfully."}    
 
 @app.post("/hello")
 def hello():
     return {"message": "Hello, world!"}
 
 
-def helper_function(session_id,path):
-    with open(path,"r") as f:
+def helper_function(session_id, path):
+    with open(path, "r") as f:
         history = json.load(f)
-
-    history.pop(session_id,None)
-
-    with open(path,"w") as f:
-        json.dump(history, f,indent=2)    
+    history.pop(session_id, None)
+    with open(path, "w") as f:
+        json.dump(history, f, indent=2)

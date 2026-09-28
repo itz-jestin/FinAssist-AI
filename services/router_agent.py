@@ -7,10 +7,36 @@ from services.chroma_service import search_chunks
 
 load_dotenv(".env")
 
-client = AsyncOpenAI(
-    api_key=os.getenv("NVIDIA_API_KEY"),
-    base_url=os.getenv("NVIDIA_BASE_URL")
-)
+ERROR_MSG = "I'm having trouble connecting to the service right now. Please try again in a moment."
+
+
+def make_client(key_env, url_env):
+    return AsyncOpenAI(
+        api_key=os.getenv(key_env),
+        base_url=os.getenv(url_env),
+        max_retries=0,
+        timeout=20,
+    )
+
+
+PROVIDERS = [
+    {"name": "bynara", "client": make_client("BYNARA_API_KEY", "BYNARA_BASE_URL"), "model": os.getenv("BYNARA_MODEL")},
+    {"name": "nvidia", "client": make_client("NVIDIA_API_KEY", "NVIDIA_BASE_URL"), "model": os.getenv("NVIDIA_MODEL")},
+]
+
+
+async def chat_with_fallback(**kwargs):
+    last_err = None
+    for p in PROVIDERS:
+        if not p["model"]:
+            continue
+        try:
+            return await p["client"].chat.completions.create(model=p["model"], **kwargs)
+        except Exception as e:
+            print(f"Provider {p['name']} failed: {e}")
+            last_err = e
+    raise last_err or RuntimeError("No providers configured")
+
 
 router_tools = [
     {"type": "function", "function": {
@@ -25,6 +51,7 @@ router_tools = [
     }}
 ]
 
+
 def use_rag(query):
     results = search_chunks(query, 2)
     chunks = results["documents"][0]
@@ -32,89 +59,83 @@ def use_rag(query):
         return "No relevant information found in the document."
     return "\n\n".join(chunks)
 
+
 available_tools = {"use_rag": use_rag, "run_account_agent": run_account_agent}
 
 
-
-async def run_router(user_prompt, user_id, session_verified,chat_history):
-    
+async def run_router(user_prompt, user_id, session_verified, chat_history):
+    """Async generator. Yields {"type": "tool", ...} events, then one {"type": "done", ...}."""
     messages = [
         {"role": "system", "content": (
-    "Your job is to only route. "
-    "For questions about people, documents, or specific facts, use the use_rag tool. "
-    "For account-related questions (balance, transactions, refunds), use run_account_agent. "
-    "\n\nYou do not need to check verification status yourself — simply call the "
-    "appropriate tool. If the tool's result indicates verification is required, "
-    "relay that to the user by saying: 'Please verify first in the account section.' "
-    "Do not ask the user for their OTP, PIN, or account number as a form of "
-    "verification. "
-    "\n\nDo not answer questions directly — only use the tools provided. "
-    "If you cannot find an answer, say 'I cannot find an answer to that question.' "
-    "Answer respectfully to the user."
-)}]
-    
-    
+            "Your job is to only route. "
+            "For questions about people, documents, or specific facts, use the use_rag tool. "
+            "For account-related questions (balance, transactions, refunds), use run_account_agent. "
+            "\n\nYou do not need to check verification status yourself — simply call the "
+            "appropriate tool. If the tool's result indicates verification is required, "
+            "relay that to the user by saying: 'Please verify first in the account section.' "
+            "Do not ask the user for their OTP, PIN, or account number as a form of "
+            "verification. "
+            "\n\nDo not answer questions directly — only use the tools provided. "
+            "If you cannot find an answer, say 'I cannot find an answer to that question.' "
+            "Answer respectfully to the user. Use plain text only, no markdown."
+        )}
+    ]
     messages.extend(chat_history)
-
-    messages.append(
-            {"role": "user", "content": user_prompt}
-        )    
+    messages.append({"role": "user", "content": user_prompt})
 
     max_loop = 8
     loop_count = 0
     last_tool_used = None
+    last_tool_output = None
+    final_text = None
 
     while loop_count < max_loop:
-        response = await client.chat.completions.create(
-            model=os.getenv("NVIDIA_MODEL"),
-            messages=messages,
-            tools=router_tools,
-            max_tokens=400,
-        )
+        try:
+            response = await chat_with_fallback(
+                messages=messages,
+                tools=router_tools,
+                max_tokens=1500,
+            )
+        except Exception as e:
+            print(f"All providers failed: {e}")
+            yield {"type": "done", "tool": last_tool_used, "answer": ERROR_MSG}
+            return
+
         call = response.choices[0].message
         messages.append(call.model_dump())
 
         if not call.tool_calls:
+            final_text = call.content
             break
 
         for tool in call.tool_calls:
             function_name = tool.function.name
             last_tool_used = function_name
-            org_function_name = available_tools.get(function_name)
+            yield {"type": "tool", "tool": function_name}  # shown in the UI instantly
+
+            fn = available_tools.get(function_name)
             print(f"Calling tool: {function_name}")
-            args = json.loads(tool.function.arguments)
-            if org_function_name == use_rag:
-                fun_out = org_function_name(args["query"])
-            elif org_function_name == run_account_agent:
-                fun_out = await org_function_name(args["query"], user_id, session_verified)
-                print("Function out of account agent: ",fun_out)
-            messages.append({"role": "tool", "tool_call_id": tool.id, "content": fun_out})
+            try:
+                args = json.loads(tool.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+
+            fun_out = "Unknown tool."
+            if fn == use_rag:
+                fun_out = fn(args.get("query", user_prompt))
+            elif fn == run_account_agent:
+                fun_out = await fn(args.get("query", user_prompt), user_id, session_verified)
+                print("Function out of account agent: ", fun_out)
+
+            last_tool_output = fun_out
+            messages.append({"role": "tool", "tool_call_id": tool.id, "content": str(fun_out)})
 
         loop_count += 1
-    meta = {"tool": last_tool_used}
-    yield json.dumps(meta) +"\n"
-    
+
     if loop_count >= max_loop:
-        yield "Maximum loop count reached. The router could not find a suitable answer."
-    else:
-        try:
-            stream =await client.chat.completions.create(
-                model=os.getenv("NVIDIA_MODEL"),
-                messages=messages,
-                max_tokens=400,
-                stream=True
-            )
-        
-            async for chunk in stream:
-                if not chunk.choices:
-                    continue
-        
-                delta = chunk.choices[0].delta
-        
-                if delta.content:
-                    yield delta.content
-        
-        except Exception as e:
-            print(f"Streaming error: {e}")
-            yield "I'm having trouble connecting to the service right now. Please try again in a moment."
-            
+        yield {"type": "done", "tool": last_tool_used,
+               "answer": "Maximum loop count reached. The router could not find a suitable answer."}
+        return
+
+    answer = (final_text or "").strip() or last_tool_output or "I cannot find an answer to that question."
+    yield {"type": "done", "tool": last_tool_used, "answer": answer}

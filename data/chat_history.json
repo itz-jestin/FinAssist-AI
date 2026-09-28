@@ -200,5 +200,121 @@
       "role": "assistant",
       "content": "Please verify first in the **account section** of the app. Once your identity is verified, I can look into your balance for you!"
     }
+  ],
+  "8ad99162-36d5-4136-b2c7-496775b459a0": [
+    {
+      "role": "user",
+      "content": "what is my account balance?"
+    },
+    {
+      "role": "assistant",
+      "content": "Here.\n. da..\n t\u1ef7}',...', in *, ( de concept, - \u00e9te actual constructions, mode: offline"
+    }
+  ],
+  "b7fbcef5-ed88-46dd-9f83-01d43c7aeb42": [
+    {
+      "role": "user",
+      "content": "what is my account balance?"
+    },
+    {
+      "role": "assistant",
+      "content": "Your current account balance is **$45,230.50**."
+    }
+  ],
+  "a04b1792-3b98-4dc4-b10e-7ece3ad940af": [
+    {
+      "role": "user",
+      "content": "what is my account balance"
+    },
+    {
+      "role": "assistant",
+      "content": "Your current account balance is **$45,230.50**. Is there anything else I can help you with?"
+    }
+  ],
+  "93eccd45-3033-492f-be36-74fa660f922e": [
+    {
+      "role": "user",
+      "content": "what is transaction status of txn_001"
+    },
+    {
+      "role": "assistant",
+      "content": "Your transaction **txn_001** \u2014 a rent payment of **-$1,200** on **2026-08-20** \u2014 has a status of **completed**. \n\nIs there anything else I can help you with?"
+    },
+    {
+      "role": "user",
+      "content": "account balance"
+    },
+    {
+      "role": "assistant",
+      "content": "Your current account balance is **$45,230.50**. \n\nLet me know if you'd like to check a specific transaction, refund eligibility, or anything else!"
+    },
+    {
+      "role": "user",
+      "content": "balance"
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot find an answer to that question."
+    },
+    {
+      "role": "user",
+      "content": "balance"
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot find an answer to that question."
+    }
+  ],
+  "be46e601-c9e1-4a5f-b6a0-36068dcc6ed4": [
+    {
+      "role": "user",
+      "content": "account balance of user_a"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems I can't access that information right now. You'll need to verify your identity first. Please complete identity verification in the account section of the app, and then I'll be able to look up the balance for you."
+    },
+    {
+      "role": "user",
+      "content": "balance"
+    },
+    {
+      "role": "assistant",
+      "content": "It looks like I need to verify your identity before I can access your balance. Please complete identity verification in the **account section** of the app, and then I'll be happy to check your balance for you. No codes, PINs, or credentials are needed \u2014 it's handled entirely within the app."
+    },
+    {
+      "role": "user",
+      "content": "balance"
+    },
+    {
+      "role": "assistant",
+      "content": "It looks like I need to verify your identity before I can check the balance. Please complete identity verification in the **account section** of the app, and then I'll be able to look up your balance."
+    },
+    {
+      "role": "user",
+      "content": "refund"
+    },
+    {
+      "role": "assistant",
+      "content": "I cannot find an answer to that question."
+    }
+  ],
+  "4c185877-0f50-46a8-b818-c9fa3ffe50fb": [
+    {
+      "role": "user",
+      "content": "Check my transaction status"
+    },
+    {
+      "role": "assistant",
+      "content": "I'd be happy to help check your transaction status. Could you please provide the transaction ID you'd like me to look into?"
+    },
+    {
+      "role": "user",
+      "content": "txn_001"
+    },
+    {
+      "role": "assistant",
+      "content": "Your transaction **txn_001** has been found. Here are the details:\n\n- **Description:** Rent payment\n- **Amount:** $1,200\n- **Date:** 2026-08-20\n- **Status:** Completed\n\nYour transaction has been successfully completed. Is there anything else I can help you with?"
+    }
   ]
 }

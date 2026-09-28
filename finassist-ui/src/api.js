@@ -21,58 +21,45 @@ export async function adminLogin(username, password) {
   return res.json();
 }
 
-export async function askQuestion(question, sessionId) {
+// Reads one JSON event per line: {type:"tool"} as the tool is picked, {type:"done"} with the answer.
+export async function askQuestion(question, sessionId, onTool) {
   const res = await fetch(`${BASE_URL}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question, session_id: sessionId }),
   });
-  return res.json();
-}
-
-export async function askQuestionStream(question, sessionId, onChunk, onToolDetected) {
-  const res = await fetch(`${BASE_URL}/ask_stream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, session_id: sessionId }),
-  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Request failed with status ${res.status}`);
+  }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let metaParsed = false;
+  let result = null;
+
+  const handleLine = (line) => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.type === "tool" && onTool) onTool(event.tool);
+    if (event.type === "done") result = event;
+  };
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-
     buffer += decoder.decode(value, { stream: true });
 
-    if (!metaParsed) {
-      const newlineIndex = buffer.indexOf("\n");
-      if (newlineIndex === -1) continue;
-
-      const metaLine = buffer.slice(0, newlineIndex);
-      buffer = buffer.slice(newlineIndex + 1);
-      metaParsed = true;
-
-      try {
-        const meta = JSON.parse(metaLine);
-        if (onToolDetected) onToolDetected(meta.tool);
-      } catch (e) {
-        console.error("Failed to parse meta line:", e);
-      }
-
-      if (buffer) {
-        onChunk(buffer);
-        buffer = "";
-      }
-      continue;
+    let idx;
+    while ((idx = buffer.indexOf("\n")) !== -1) {
+      handleLine(buffer.slice(0, idx));
+      buffer = buffer.slice(idx + 1);
     }
-
-    onChunk(buffer);
-    buffer = "";
   }
+  handleLine(buffer);
+
+  if (!result) throw new Error("No response received from the server.");
+  return result; // { type, tool, answer }
 }
 
 export async function getTickets(userId) {
